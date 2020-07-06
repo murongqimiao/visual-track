@@ -1,0 +1,65 @@
+// 事件列表
+const jsonObj = JSON.parse(eventList)
+
+const oldEventList = []
+
+const onPageChange = function (hash) {
+  jsonObj.forEach(function (item) {
+    if (item.page === hash) {
+      oldEventList.forEach(function (oldEventItem) {
+        document.removeEventListener('click', oldEventItem)
+      })
+
+      item.events.forEach(function (eventItem) {
+        const handler = function (e) {
+          if (e.target.matches(eventItem.selector)) {
+
+            // TODO 可以在这里执行自定义的埋点事件
+            console.log(eventItem)
+          }
+        }
+        oldEventList.push(handler)
+
+        // TODO 可以在这里判断不同的事件类型，并根据不同的类型添加不同的事件
+        document.addEventListener('click', handler, false)
+      })
+    }
+  })
+}
+onPageChange(window.location.hash)
+
+const pushState = window.history.pushState
+window.history.pushState = function (obj, name, hash) {
+  if (typeof window.onPushstate === 'function') {
+    window.onPushstate(hash)
+  }
+  return pushState.apply(window.history, arguments)
+}
+
+const popState = window.history.popState
+window.history.popState = function (obj, name, hash) {
+  if (typeof window.onpopstate === 'function') {
+    window.onpopstate(hash)
+  }
+  return popState.apply(window.history, arguments)
+}
+
+const replaceState = window.history.replaceState
+window.history.replaceState = function (obj, name, hash) {
+  if (typeof window.onPushstate === 'function') {
+    window.onPushstate(hash)
+  }
+  return replaceState.apply(window.history, arguments)
+}
+
+function getFragment (url) {
+  return url.replace(/^[^#]*(#?.*)$/, '$1')
+}
+
+window.onPushstate = function (hash) {
+  onPageChange(getFragment(hash))
+}
+
+window.onpopstate = function () {
+  onPageChange(window.location.hash)
+}
