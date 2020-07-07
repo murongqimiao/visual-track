@@ -39,6 +39,10 @@ var selectPlugin = {
     ipcRenderer.sendToHost('selector', selector)
   },
 
+  clearAjaxList: function () {
+    window.currentPageAjaxInfo = null
+  },
+
   getUniqueSelect: function (node) {
     let path
     while (node) {

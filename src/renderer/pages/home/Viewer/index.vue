@@ -114,7 +114,7 @@ export default {
     },
 
     onDidNavigateInPage ({ url }) {
-      // this.$refs.webview.executeJavaScript('selectPlugin.clearAjaxList()') // 跳页完成,清除上个页面的接口数据
+      this.$refs.webview.executeJavaScript('selectPlugin.clearAjaxList()') // 跳页完成,清除上个页面的接口数据
       this.setWebviewUrl({ url, change: false })
       this.canGoBack = this.$refs.webview.canGoBack()
       this.canGoForward = this.$refs.webview.canGoForward()
