@@ -1,8 +1,8 @@
 {
   "name": "visual-track",
   "version": "0.0.1",
-  "author": "",
-  "description": "",
+  "author": "murongqimiao@live.cn",
+  "description": "带xhr监听的可视化埋点工具",
   "license": "",
   "main": "./dist/electron/main.js",
   "scripts": {
