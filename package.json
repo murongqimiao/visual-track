@@ -1,9 +1,9 @@
 {
-  "name": "vue-visual-track",
+  "name": "visual-track",
   "version": "0.0.1",
-  "author": "liuhuihao <1061036802@qq.com>",
-  "description": "Vue 移动端项目可视化埋点探索",
-  "license": "MIT",
+  "author": "",
+  "description": "",
+  "license": "",
   "main": "./dist/electron/main.js",
   "scripts": {
     "build": "node .electron-vue/build.js && electron-builder",
@@ -19,7 +19,7 @@
     "postinstall": "npm run lint:fix"
   },
   "build": {
-    "productName": "vue-visual-track",
+    "productName": "visual-track",
     "appId": "com.example.yourapp",
     "directories": {
       "output": "build"
@@ -53,11 +53,13 @@
     }
   },
   "dependencies": {
+    "@riophae/vue-treeselect": "^0.4.0",
     "axios": "^0.18.0",
     "element-ui": "^2.10.1",
     "font-awesome": "^4.7.0",
     "vue": "^2.5.16",
     "vue-electron": "^1.0.6",
+    "vue-json-views": "^1.3.0",
     "vue-router": "^3.0.1",
     "vuex": "^3.0.1",
     "vuex-electron": "^1.0.0"

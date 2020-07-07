@@ -14,7 +14,7 @@
       <event-list ref="eventList"></event-list>
 
       <!-- 右侧xhr数据 -->
-      <xhr-list :ajaxINfoList="ajaxINfoList" ref="xhrList"></xhr-list>
+      <xhr-list :ajaxInfoList="ajaxInfoList" ref="xhrList"></xhr-list>
     </div>
   </div>
 </template>
@@ -31,7 +31,7 @@ export default {
   components: { TopBar, Viewer, BtnContainer, EventList, XhrList },
   data () {
     return {
-      ajaxINfoList: []
+      ajaxInfoList: {}
     }
   },
   methods: {
@@ -41,8 +41,8 @@ export default {
       this.$refs.eventList.showModal(data)
     },
     updateTreeData (value) {
-      console.log('------------->', value)
       this.ajaxINfoList = value
+      this.$refs.xhrList.updateAjaxInfoList(value)
     }
   }
 }

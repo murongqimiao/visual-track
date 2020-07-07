@@ -37,7 +37,6 @@ import URL from 'url'
 import insertJs from './insert.jsraw'
 import electron from 'electron'
 import IPC from '@/../IPC.js'
-// const xhrProxy = require('./xhrProxy.js');
 
 export default {
   name: 'Viewer',
@@ -47,7 +46,6 @@ export default {
       canGoForward: false,
       title: '',
       loading: false,
-      // xhrProxy: xhrProxy,
       loadFail: false // webview是否加载失败
     }
   },
@@ -116,6 +114,7 @@ export default {
     },
 
     onDidNavigateInPage ({ url }) {
+      // this.$refs.webview.executeJavaScript('selectPlugin.clearAjaxList()') // 跳页完成,清除上个页面的接口数据
       this.setWebviewUrl({ url, change: false })
       this.canGoBack = this.$refs.webview.canGoBack()
       this.canGoForward = this.$refs.webview.canGoForward()

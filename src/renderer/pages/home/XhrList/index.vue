@@ -12,73 +12,59 @@
 
     <!-- 事件列表 -->
     <div class="event-container">
-      <img v-if="eventList.length === 0" class="empty-img" src="@/assets/img/empty.jpg" />
-
-      <div class="event-item" v-for="(item, i) in eventList" :key="i + 'event'">
-        <div class="info-container">
-          <div class="info-item">
-            <label>事件级别：</label>
-            <span>区域级</span>
-          </div>
-          <div class="info-item">
-            <label>页面地址：</label>
-            <span>{{item.page}}</span>
-          </div>
-          <div class="info-item">
-            <label>选择器：</label>
-            <span>{{item.selector}}</span>
-          </div>
-          <div class="info-item">
-            <label>事件类型：</label>
-            <span>1</span>
-          </div>
-        </div>
-
-        <div class="event-btn-container">
-          <div class="event-btn-context">
-            <i class="fa fa-pencil" @click="editItem(item)"></i>
-            <i class="fa fa-trash" @click="removeItem(item)"></i>
-          </div>
-        </div>
+      <img v-if="!ajaxInfoList" class="empty-img" src="@/assets/img/empty.jpg" />
+      <div>
+        <json-view v-if="ajaxInfoList" :data="ajaxInfoList" />
+        <!-- <treeselect v-model="value" :multiple="true" :options="options" /> -->
       </div>
     </div>
-
-    <!-- 添加弹框 -->
-    <!-- <event-modal ref="eventModal" @saveEvent="saveEvent"></event-modal> -->
   </div>
 </template>
 
 <script>
-// import EventModal from './EventModal'
 import electron, { remote, ipcRenderer, ipcMain } from 'electron'
 import trackJs from './track.jsraw'
 import fs from 'fs'
+import jsonView from 'vue-json-views'
+// import the component
+// import Treeselect from '@riophae/vue-treeselect'
+// import the styles
+// import '@riophae/vue-treeselect/dist/vue-treeselect.css'
 
 export default {
   name: 'Viewer',
-  components: {},
+  props: {},
+  components: { jsonView },
   data () {
     return {
-      eventList: [] // 事件列表
+      ajaxInfoList: null,
+      eventList: [], // 事件列表
+      value: null,
+      options: [{
+        id: 'a',
+        label: 'a',
+        children: [{
+          id: 'aa',
+          label: 'aa'
+        }, {
+          id: 'ab',
+          label: 'ab'
+        }]
+      }, {
+        id: 'b',
+        label: 'b'
+      }, {
+        id: 'c',
+        label: 'c'
+      }]
     }
   },
   created () {
-    // this.addXhrListener()
-    ipcRenderer.on('ajaxListened', (arg) => {
-      console.log('参数参数参数参数参数参数参数参数参数参数参数参数参数参数参数参数', arg)
-    })
-    // setTimeout(() => {
-    //   console.log('ajaxListened', electron)
-    //   ipcRenderer.on('ajaxListened', (arg) => {
-    //     console.log('参数参数参数参数参数参数参数参数参数参数参数参数参数参数参数参数', arg)
-    //   })
-    // ipcMain.on('ajaxListened', (event, arg) => {
-    //   console.log(arg)
-    //   console.log('接收', event)
-    // })
-    // }, 3000)
   },
   methods: {
+    updateAjaxInfoList (value) {
+      this.ajaxInfoList = JSON.parse(JSON.stringify(value))
+    },
     addXhrListener () {
       const that = this
       var OldXhr = window.XMLHttpRequest
