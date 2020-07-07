@@ -25,6 +25,7 @@ import Viewer from './Viewer'
 import BtnContainer from './BtnContainer'
 import EventList from './EventList'
 import XhrList from './XhrList'
+import { mapState, mapMutations } from 'vuex'
 
 export default {
   name: 'index',
@@ -43,7 +44,9 @@ export default {
     updateTreeData (value) {
       this.ajaxINfoList = value
       this.$refs.xhrList.updateAjaxInfoList(value)
-    }
+      this.setAjaxListInfo(value)
+    },
+    ...mapMutations(['setAjaxListInfo'])
   }
 }
 </script>

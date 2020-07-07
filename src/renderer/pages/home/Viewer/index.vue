@@ -82,11 +82,11 @@ export default {
     onIpcMessage (response) {
       const { channel, args } = response
       if (channel === 'selector') {
-        const url = URL.parse(this.$refs.webview.getURL()).hash
+        const url = URL.parse(this.$refs.webview.getURL()).pathname // 针对react项目的history路由,使用它的pathName作为page的值
         const obj = {
           level: '1',
           page: url,
-          selector: channel
+          selector: args[0] || ''
         }
         this.$emit('addEvent', obj)
       } else if (channel === 'ajaxListened' && args) {

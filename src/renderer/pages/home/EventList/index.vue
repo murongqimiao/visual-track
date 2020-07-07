@@ -14,12 +14,16 @@
       <div class="event-item" v-for="(item, i) in eventList" :key="i + '_event'">
         <div class="info-container">
           <div class="info-item">
-            <label>事件级别：</label>
-            <span>区域级</span>
-          </div>
-          <div class="info-item">
             <label>页面地址：</label>
             <span>{{item.page}}</span>
+          </div>
+          <div class="info-item">
+            <label>evt_id:</label>
+            <span>{{item.evt_id}}</span>
+          </div>
+          <div class="info-item">
+            <label>uicode:</label>
+            <span>{{item.uicode}}</span>
           </div>
           <div class="info-item">
             <label>选择器：</label>
@@ -27,7 +31,7 @@
           </div>
           <div class="info-item">
             <label>事件类型：</label>
-            <span>1</span>
+            <span>{{getLevel(item.level)}}</span>
           </div>
         </div>
 
@@ -60,7 +64,10 @@ export default {
     }
   },
   methods: {
-
+    getLevel (nth) {
+      let arr = ['', '浏览', '曝光', '点击']
+      return arr[nth]
+    },
     // 展示事件弹框
     showModal (data) {
       this.$refs.eventModal.showModal(data)
