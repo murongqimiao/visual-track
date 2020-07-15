@@ -1,0 +1,309 @@
+
+let currentPageEventList = [] // 当前页面的埋点事件
+let trackCallback = {} // 埋点回调事件
+let RUNTYPE = 0 // 运行模式  0: 默认,执行埋点回调
+
+
+/**
+ * 监听页面跳转主函数
+ */
+class Dep {                  // 订阅池
+  constructor(name) {
+    this.id = new Date() //这里简单的运用时间戳做订阅池的ID
+    this.subs = []       //该事件下被订阅对象的集合
+  }
+  defined () {              // 添加订阅者
+    Dep.watch.add(this);
+  }
+  notify () {              //通知订阅者有变化
+    this.subs.forEach((e, i) => {
+      if (typeof e.update === 'function') {
+        try {
+          e.update.apply(e)  //触发订阅者更新函数
+        } catch (err) {
+          console.warr(err)
+        }
+      }
+    })
+  }
+
+}
+Dep.watch = null;
+
+class Watch {
+  constructor(name, fn) {
+    this.name = name;       //订阅消息的名称
+    this.id = new Date();   //这里简单的运用时间戳做订阅者的ID
+    this.callBack = fn;     //订阅消息发送改变时->订阅者执行的回调函数     
+  }
+  add (dep) {                  //将订阅者放入dep订阅池
+    dep.subs.push(this);
+  }
+  update () {                  //将订阅者更新方法
+    var cb = this.callBack; //赋值为了不改变函数内调用的this
+    cb(this.name);
+  }
+}
+
+
+var addHistoryMethod = (function () {
+  var historyDep = new Dep();
+  return function (name) {
+    if (name === 'historychange') {
+      return function (name, fn) {
+        var event = new Watch(name, fn)
+        Dep.watch = event;
+        historyDep.defined();
+        Dep.watch = null;       //置空供下一个订阅者使用
+      }
+    } else if (name === 'pushState' || name === 'replaceState') {
+      var method = history[name];
+      return function () {
+        method.apply(history, arguments);
+        historyDep.notify();
+      }
+    }
+
+  }
+}())
+
+window.addHistoryListener = addHistoryMethod('historychange');
+history.pushState = addHistoryMethod('pushState');
+history.replaceState = addHistoryMethod('replaceState');
+
+// 获取元素的xpath
+function readXPath(element) {
+    if (element.id !== "") {//判断id属性，如果这个元素有id，则显 示//*[@id="xPath"]  形式内容
+        return '//*[@id=\"' + element.id + '\"]';
+    }
+    //这里需要需要主要字符串转译问题，可参考js 动态生成html时字符串和变量转译（注意引号的作用）
+    if (element == document.body) {//递归到body处，结束递归
+        return '/html/' + element.tagName.toLowerCase();
+    }
+    var ix = 1,//在nodelist中的位置，且每次点击初始化
+         siblings = element.parentNode.childNodes;//同级的子元素
+
+    for (var i = 0, l = siblings.length; i < l; i++) {
+        var sibling = siblings[i];
+        //如果这个元素是siblings数组中的元素，则执行递归操作
+        if (sibling == element) {
+            return arguments.callee(element.parentNode) + '/' + element.tagName.toLowerCase() + '[' + (ix) + ']';
+            //如果不符合，判断是否是element元素，并且是否是相同元素，如果是相同的就开始累加
+        } else if (sibling.nodeType == 1 && sibling.tagName == element.tagName) {
+            ix++;
+        }
+    }
+};
+
+/**
+ * 根据XPath获取元素
+ */
+function _x(STR_XPATH) {
+  var xresult = document.evaluate(STR_XPATH, document, null, XPathResult.ANY_TYPE, null);
+  var xnodes = [];
+  var xres;
+  while (xres = xresult.iterateNext()) {
+      xnodes.push(xres);
+  }
+
+  return xnodes;
+}
+
+/**
+ * 监听ajax请求
+ */
+;(function () {
+  function ajaxEventTrigger (event, params) {
+    var ajaxEvent = new CustomEvent(event, { detail: this });
+    if (!window.currentPageAjaxInfo) {
+      window['currentPageAjaxInfo'] = {}
+    }
+    if (event === 'ajaxLoadEnd') { // 此时具有返回值
+      const { target } = params[0]
+      const { responseURL, response } = target
+      response['isXhrResult'] = true
+      const key = responseURL.split('?')[0].split(location.host)[1]
+      const value = JSON.parse(response)
+      window.currentPageAjaxInfo[key] = value // xhr请求内容放在window.currentPageAjaxInfo上
+    }
+    window.dispatchEvent(ajaxEvent);
+  }
+  var oldXHR = window.XMLHttpRequest;
+  function newXHR () {
+    var realXHR = new oldXHR();
+    realXHR.addEventListener('loadend', function (...params) { ajaxEventTrigger.call(this, 'ajaxLoadEnd', params); }, false);
+    realXHR.addEventListener('readystatechange', function (...params) { ajaxEventTrigger.call(this, 'ajaxReadyStateChange', params); }, false);
+    return realXHR;
+  }
+  window.XMLHttpRequest = newXHR;
+})();
+
+/**
+ * 为params参数增加xhr中的字段
+ * trackAjaxList 例子[ '/community/rubbish/rubbishHome.data.category.list[2].categoryName', ... ]
+ * 递归获取深层数据
+ */
+const decorateXhrInfo = (params, trackAjaxList) => {
+
+  const getDeepValue = (value, arr) => {
+    if (!arr || !arr.length) {
+      return value
+    } else {
+      let key = arr.splice(0,1)[0]
+      if (value[key]) {
+        return getDeepValue(value[key], arr)
+      } else if (key.match(/\[\d+\]/).length) { // arr[list[2]]这种
+        const matchIndex = key.match(/(\[)(\d+)(\])/)[2]
+        const matchKey = key.split(key.match(/\[\d+\]/)[0])[0]
+        let deepValue = value[matchKey][matchIndex]
+        return getDeepValue(deepValue, arr)
+      } else {
+        return ''
+      }
+    }
+  }
+
+  trackAjaxList.forEach(item => {
+    let ajaxName = item.split('.').slice(0, 1)[0] // 获取ajax的名字, 如/community/rubbish/rubbishHome
+    let ajaxPath = item.split('.').slice(1)
+    if (window.currentPageAjaxInfo && window.currentPageAjaxInfo[ajaxName]) {
+      let aimAjax = window.currentPageAjaxInfo[ajaxName]
+      let keyName = item.split('.').slice(-1)[0]
+      params[keyName] = getDeepValue(aimAjax, ajaxPath)
+    }
+  })
+
+  return params
+}
+
+/**
+ * 判断元素是否在可视区域
+ */
+function isElementInViewport (el, offset = 0) {
+  const box = el.getBoundingClientRect(),
+        top = (box.top >= 0),
+        left = (box.left >= 0),
+        bottom = (box.bottom <= (window.innerHeight || document.documentElement.clientHeight) + offset),
+        right = (box.right <= (window.innerWidth || document.documentElement.clientWidth) + offset);
+  return (top && left && bottom && right);
+}
+
+/**
+ * 注册页面跳转的监听
+ */
+window.addHistoryListener('history', function () {
+  updateCurrentPageEventList()
+});
+
+/**
+ * 注册页面点击的监听
+ */
+window.document.body.addEventListener('click', e => trackPageClick(e))
+
+/**
+ * 注册页面touch的监听
+ */
+window.document.body.addEventListener('touchend', e => trackPageExposure(e))
+
+/**
+ * 更新当前页面埋点的信息
+ */
+const updateCurrentPageEventList = () => {
+  const pathname = location.pathname
+  const { events } = eventList.find(item => item.page === pathname) || {}
+  // 跳页清空xhr监听的list
+  window['currentPageAjaxInfo'] = {}
+  // 更新当前页面埋点事件列表
+  currentPageEventList = events
+  console.log('已进行页面跳转,当前页面的pathname为:', pathname, '待埋点列表为', events)
+
+  // 触发页面浏览埋点
+  trackPageView()
+}
+
+/**
+ * track 埋点事件
+ */
+const trackIt = (trackInfo, once) => {
+  // 数据采集
+  const { evt_id, pid, uicode, value } = trackInfo
+  let params = { evt_id, pid, uicode }
+  if (value && value.length) {
+    params = decorateXhrInfo(params, value)
+  }
+  console.log('开始埋点, 埋点的参数是', params)
+  if (once) {
+    console.log('只单次触发,埋点后删除,再次进入当前页恢复次数')
+    currentPageEventList = currentPageEventList.filter(item => item.id !== trackInfo.id)
+  }
+}
+
+/**
+ * 页面浏览事件
+ */
+const trackPageView = () => {
+
+  if (!currentPageEventList) return
+
+  console.log('页面浏览准备埋点', )
+
+  currentPageEventList.map(item => {
+    if (item.level === '1') { // 页面浏览埋点 level == 1, 点击埋点  levet == 2, 曝光埋点 level == 3
+      delete item.value // 浏览埋点不考虑xhr请求的内容
+      trackIt(item)
+    }
+  })
+
+}
+
+/**
+ * 页面点击事件
+ */
+const trackPageClick = (e) => {
+  if (!currentPageEventList) return
+
+  console.log('点击元素是', e.target)
+  console.log('点击元素的XPath是', readXPath(e.target))
+  const clickXPath = readXPath(e.target) // 当前点击元素的XPath
+  let ElClickEvent = currentPageEventList.find(item => item.selector === clickXPath)
+  if (ElClickEvent) {
+    console.log('点击元素具有埋点事件, 开始埋点', ElClickEvent)
+    trackIt(ElClickEvent)
+  }
+}
+
+/**
+ * 页面touch事件
+ */
+trackPageExposure = (e) => {
+  if (!currentPageEventList) return
+
+  console.log('触摸结束, 检测页面曝光事件')
+  const exposureEvent = currentPageEventList.filter(item => item.level === '2')
+  if (exposureEvent && exposureEvent.length) {
+    exposureEvent.forEach(item => {
+      let expousreEl = _x(item.selector)
+      if (expousreEl) { //曝光元素在可视区域,触发埋点
+        trackIt(item, true)
+      }
+    })
+  }
+}
+
+/**
+ * add / reduce trackCallback 相关操作
+ */
+handleTrackCallback = (handleType, key, func, cb) => {
+  switch (handleType) {
+    case 'init': 
+      trackCallback = {}
+      break;
+    case 'add':
+      trackCallback[key] = func
+      break;
+    case 'remove':
+      delete trackCallback[key]
+      break;
+    default: cb && cb(trackCallback)
+  }
+}

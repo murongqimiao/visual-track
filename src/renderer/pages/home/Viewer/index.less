@@ -1,0 +1,60 @@
+.viewer {
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.3);
+    box-sizing: content-box;
+    flex: 0 0 414px;
+    position: relative;
+
+    .header {
+        height: 50px;
+        line-height: 50px;
+        text-align: center;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        position: relative;
+        width: 414px;
+
+        h1 {
+            padding: 0 70px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .loading {
+            height: 49px;
+            position: absolute;
+            right: 20px;
+            top: 0;
+        }
+
+        .back, .forward {
+            position: absolute;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .back {
+            left: 10px;
+            top: 0;
+        }
+
+        .forward {
+            right: 10px;
+            top: 0;
+        }
+    }
+
+    .webview {
+        width: 414px;
+        height: 736px;
+        display: inline-flex;
+    }
+
+    .img-404 {
+        position: absolute;
+        width: 220px;
+        top: 110px;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+}
